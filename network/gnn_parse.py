@@ -7,8 +7,11 @@ from torch.nn import functional as F
 from inplace_abn.bn import InPlaceABNSync
 from modules.com_mod import Bottleneck, ResGridNet, SEModule
 from modules.parse_mod import ASPPModule
-
-BatchNorm2d = functools.partial(InPlaceABNSync, activation='none')
+#########################################################################
+# 수정2.
+BatchNorm2d = nn.BatchNorm2d
+# BatchNorm2d = functools.partial(InPlaceABNSync, activation='none')
+#########################################################################
 class ConvGRU(nn.Module):
     def __init__(self, input_dim, hidden_dim, kernel_size):
         super(ConvGRU, self).__init__()

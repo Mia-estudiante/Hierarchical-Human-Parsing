@@ -6,12 +6,45 @@ from torch.nn import functional as F
 
 from inplace_abn.bn import InPlaceABNSync
 from modules.com_mod import SEModule, ContextContrastedModule
-
-BatchNorm2d = functools.partial(InPlaceABNSync, activation='none')
+#########################################################################
+# 수정2.
+BatchNorm2d = nn.BatchNorm2d
+# BatchNorm2d = functools.partial(InPlaceABNSync, activation='none')
+#########################################################################
 
 class ASPPModule(nn.Module):
     """ASPP"""
+    def __init__(self, in_dim, out_dim, scale=1):
+        super(ASPPModule, self).__init__()
+        self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
+                                nn.Conv2d(in_dim, out_dim, 1, bias=False), )
 
+        self.dilation_0 = nn.Sequential(nn.Conv2d(in_dim, out_dim, kernel_size=1, padding=0, dilation=1, bias=False),
+                                        SEModule(out_dim, reduction=16))
+
+        self.dilation_1 = nn.Sequential(nn.Conv2d(in_dim, out_dim, kernel_size=1, padding=0, dilation=1, bias=False),
+                                        nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=6, dilation=6, bias=False),
+                                        SEModule(out_dim, reduction=16))
+
+        self.dilation_2 = nn.Sequential(nn.Conv2d(in_dim, out_dim, kernel_size=1, padding=0, dilation=1, bias=False),
+                                        
+                                        nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=12, dilation=12, bias=False),
+                                        SEModule(out_dim, reduction=16))
+
+        self.dilation_3 = nn.Sequential(nn.Conv2d(in_dim, out_dim, kernel_size=1, padding=0, dilation=1, bias=False),
+                                        
+                                        nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=18, dilation=18, bias=False),
+                                        SEModule(out_dim, reduction=16))
+
+        self.psaa_conv = nn.Sequential(nn.Conv2d(in_dim + 5 * out_dim, out_dim, 1, padding=0, bias=False),
+                                        
+                                        nn.Conv2d(out_dim, 5, 1, bias=True),
+                                        nn.Sigmoid())
+
+        self.project = nn.Sequential(nn.Conv2d(out_dim * 5, out_dim, kernel_size=1, padding=0, bias=False),
+                                    )
+    
+    '''
     def __init__(self, in_dim, out_dim, scale=1):
         super(ASPPModule, self).__init__()
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
@@ -42,6 +75,8 @@ class ASPPModule(nn.Module):
 
         self.project = nn.Sequential(nn.Conv2d(out_dim * 5, out_dim, kernel_size=1, padding=0, bias=False),
                                        InPlaceABNSync(out_dim))
+    '''
+    
 
     def forward(self, x):
         # parallel branch
